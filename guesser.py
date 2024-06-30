@@ -5,6 +5,7 @@ import random as r
 import asyncio as asc
 from datetime import datetime
 import sqlite3 as sql
+import repository
 
 # Токен, префикс, разрешения
 TOKEN = 'MTE5NTYxMzA2OTEyOTI5Nzk5MA.G0fec1.t7IGTikGHXzSYeeGo5WpHz01AqGLzsC3VwaUnI'
@@ -18,6 +19,7 @@ bot.remove_command('help')
 
 connection = sql.connect('server.db')
 cursor = connection.cursor()
+repository = repository.Repository()
 
 # Переменные
 iterations = 0
@@ -25,39 +27,40 @@ iterations = 0
 # Создание таблицы базы данных
 @bot.event
 async def on_ready():
-    cursor.execute("""CREATE TABLE IF NOT EXISTS users (
-        users_id INT AUTO_INCREMENT PRIMARY KEY,
-        name TEXT,
-        discord_id INT,
-        points INT,
-        guessed_total INT
-        guessed_easy INT,
-        guessed_medium INT,
-        guessed_hard INT
-    )""")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS levels (
-        levels_id INT AUTO_INCREMENT PRIMARY KEY,
-        level_name TEXT               
-    )""")
-    cursor.execute("""CREATE TABLE IF NOT EXISTS users_levels (
-        users_levels_id INT AUTO_INCREMENT PRIMARY KEY,
-        users_id INT NOT NULL,
-        levels_id INT,
-        FOREIGN KEY (users_id) REFERENCES users (users_id),
-        FOREIGN KEY (levels_id) REFERENCES levels (levels_id)
-    )""")
-    connection.commit()
+    pass
+    # cursor.execute("""CREATE TABLE IF NOT EXISTS users (
+    #     users_id INT AUTO_INCREMENT PRIMARY KEY,
+    #     name TEXT,
+    #     discord_id INT,
+    #     points INT,
+    #     guessed_total INT
+    #     guessed_easy INT,
+    #     guessed_medium INT,
+    #     guessed_hard INT
+    # )""")
+    # cursor.execute("""CREATE TABLE IF NOT EXISTS levels (
+    #     levels_id INT AUTO_INCREMENT PRIMARY KEY,
+    #     level_name TEXT               
+    # )""")
+    # cursor.execute("""CREATE TABLE IF NOT EXISTS users_levels (
+    #     users_levels_id INT AUTO_INCREMENT PRIMARY KEY,
+    #     users_id INT NOT NULL,
+    #     levels_id INT,
+    #     FOREIGN KEY (users_id) REFERENCES users (users_id),
+    #     FOREIGN KEY (levels_id) REFERENCES levels (levels_id)
+    # )""")
+    # connection.commit()
 
-    for guild in bot.guilds:
-        for member in guild.members:
-            if cursor.execute(f"SELECT id FROM users WHERE id = {member.id}").fetchone() is None:
-                cursor.execute(f"INSERT INTO users VALUES ('{member}', {member.id}, 0, 0, 0, 0, 0)")
-                connection.commit()
-@bot.event
-async def on_member_join(member):
-    if cursor.execute(f"SELECT id FROM users WHERE id = {member.id}").fetchone() is None:
-        cursor.execute(f"INSERT INTO users VALUES ('{member}', {member.id}, 0, 0, 0, 0, 0)")
-        connection.commit()
+    # for guild in bot.guilds:
+    #     for member in guild.members:
+    #         if cursor.execute(f"SELECT id FROM users WHERE id = {member.id}").fetchone() is None:
+    #             cursor.execute(f"INSERT INTO users VALUES ('{member}', {member.id}, 0, 0, 0, 0, 0)")
+    #             connection.commit()
+# @bot.event
+# async def on_member_join(member):
+#     if cursor.execute(f"SELECT id FROM users WHERE id = {member.id}").fetchone() is None:
+#         cursor.execute(f"INSERT INTO users VALUES ('{member}', {member.id}, 0, 0, 0, 0, 0)")
+#         connection.commit()
 
 # Команда угадывания
 @bot.command(aliases=["guess", "угамага", "угагага", "угадать"])
@@ -108,18 +111,9 @@ async def угадалка(ctx, difficulty=None):
             author = guessed_answer.author.mention # Упрощение упоминания пользователя
             await guessed_answer.add_reaction('✅') # Реакция на правильный ответ
             await ctx.send(f"{author} угадал(а) уровень.") # Отправка сообщения о победе
-            cursor.execute("UPDATE users SET points = points + 1 WHERE id = {}".format(guessed_answer.author.id)) # Прибавление очков
-            connection.commit() # Подтверждение изменений
+            repository.updateUserStatistics(guessed_answer.author.id)
             iterations = 0 # Обнуление задач
-            if cursor.execute("SELECT"): # Если нету элемента в списке
-                cursor.execute("UPDATE users SET guessed = guessed + 1 WHERE id = {}".format(guessed_answer.author.id)) # Обновление угаданных уровней
-                connection.commit() # Подтверждение изменений
-                if name in n.easy:
-                    cursor.execute("UPDATE users SET guessed_easy = guessed_easy + 1 WHERE id = {}".format(guessed_answer.author.id)) # Обновление угаданных уровней
-                elif name in n.medium:
-                    cursor.execute("UPDATE users SET guessed_medium = guessed_medium + 1 WHERE id = {}".format(guessed_answer.author.id)) # Обновление угаданных уровней
-                elif name in n.hard:
-                    cursor.execute("UPDATE users SET guessed_hard = guessed_hard + 1 WHERE id = {}".format(guessed_answer.author.id)) # Обновление угаданных уровней
+            repository.addGuessedLevel(guessed_answer.author.id, name)
             break # Завершение цикла
 
 # Статистика игрока
@@ -128,17 +122,26 @@ async def стата(ctx, member: discord.Member = None):
     if member is None:
         embed = discord.Embed(
             title = "Ваша статистика:",
-            description = f"☕ **Очки:** {cursor.execute("SELECT points FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]}\n\n 🎀 **Угаданные уровни**: {cursor.execute("SELECT guessed FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]} / {n.names}\n 🟢 **Угаданные легкие уровни**: {cursor.execute("SELECT guessed_easy FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]} / {list(n.easy)[-1]}\n 🟡 **Угаданные средние уровни**: {cursor.execute("SELECT guessed_normal FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]} / {list(n.medium)[-1]}\n 🔴 **Угаданные сложные уровни**: {cursor.execute("SELECT guessed_hard FROM users WHERE id = {}".format(ctx.author.id)).fetchone()[0]} / {list(n.hard)[-1]}",
+            description = descriptionString(ctx.author.id),
             colour = discord.Colour.from_rgb(158, 160, 255)
         )
         await ctx.reply(embed = embed, mention_author = False)
     else:
         embed = discord.Embed(
             title = f"Статистика игрока {member.nick}:",
-            description = f"☕ **Очки:** {cursor.execute("SELECT points FROM users WHERE id = {}".format(member.id)).fetchone()[0]}\n\n 🎀 **Угаданные уровни**: {cursor.execute("SELECT guessed FROM users WHERE id = {}".format(member.id)).fetchone()[0]} / {n.names}\n 🟢 **Угаданные легкие уровни**: {cursor.execute("SELECT guessed_easy FROM users WHERE id = {}".format(member.id)).fetchone()[0]} / {list(n.easy)[-1]}\n 🟡 **Угаданные средние уровни**: {cursor.execute("SELECT guessed_normal FROM users WHERE id = {}".format(member.id)).fetchone()[0]} / {list(n.medium)[-1]}\n 🔴 **Угаданные сложные уровни**: {cursor.execute("SELECT guessed_hard FROM users WHERE id = {}".format(member.id)).fetchone()[0]} / {list(n.hard)[-1]}",
+            description = descriptionString(member.id),
             colour = discord.Colour.from_rgb(158, 160, 255)
         )
         await ctx.reply(embed = embed, mention_author = False)
+
+def descriptionString(discordId):
+    userStatistics = repository.getUserStatistics(discordId)
+    return  f"☕ **Очки:** {userStatistics["points"]}\n\n " \
+        f"🎀 **Угаданные уровни**: {userStatistics["guessed_total"]} / {n.names}\n " \
+        f"🟢 **Угаданные легкие уровни**: {userStatistics["guessed_easy"]} / {list(n.easy)[-1]}\n " \
+        f"🟡 **Угаданные средние уровни**: {userStatistics["guessed_medium"]} / {list(n.medium)[-1]}\n " \
+        f"🔴 **Угаданные сложные уровни**: {userStatistics["guessed_hard"]} / {list(n.hard)[-1]}"
+
 
 # Инфо по боту
 @bot.command()
