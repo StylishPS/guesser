@@ -24,44 +24,6 @@ repository = repository.Repository()
 # Переменные
 iterations = 0
 
-# Создание таблицы базы данных
-@bot.event
-async def on_ready():
-    pass
-    # cursor.execute("""CREATE TABLE IF NOT EXISTS users (
-    #     users_id INT AUTO_INCREMENT PRIMARY KEY,
-    #     name TEXT,
-    #     discord_id INT,
-    #     points INT,
-    #     guessed_total INT
-    #     guessed_easy INT,
-    #     guessed_medium INT,
-    #     guessed_hard INT
-    # )""")
-    # cursor.execute("""CREATE TABLE IF NOT EXISTS levels (
-    #     levels_id INT AUTO_INCREMENT PRIMARY KEY,
-    #     level_name TEXT               
-    # )""")
-    # cursor.execute("""CREATE TABLE IF NOT EXISTS users_levels (
-    #     users_levels_id INT AUTO_INCREMENT PRIMARY KEY,
-    #     users_id INT NOT NULL,
-    #     levels_id INT,
-    #     FOREIGN KEY (users_id) REFERENCES users (users_id),
-    #     FOREIGN KEY (levels_id) REFERENCES levels (levels_id)
-    # )""")
-    # connection.commit()
-
-    # for guild in bot.guilds:
-    #     for member in guild.members:
-    #         if cursor.execute(f"SELECT id FROM users WHERE id = {member.id}").fetchone() is None:
-    #             cursor.execute(f"INSERT INTO users VALUES ('{member}', {member.id}, 0, 0, 0, 0, 0)")
-    #             connection.commit()
-# @bot.event
-# async def on_member_join(member):
-#     if cursor.execute(f"SELECT id FROM users WHERE id = {member.id}").fetchone() is None:
-#         cursor.execute(f"INSERT INTO users VALUES ('{member}', {member.id}, 0, 0, 0, 0, 0)")
-#         connection.commit()
-
 # Команда угадывания
 @bot.command(aliases=["guess", "угамага", "угагага", "угадать"])
 async def угадалка(ctx, difficulty=None):
@@ -98,6 +60,7 @@ async def угадалка(ctx, difficulty=None):
     await ctx.reply(embed = embed, mention_author = False) # Отправка эмбедов
     timeout = 14 # Первоначальный таймаут
     timestamp = datetime.now().timestamp() # Временная метка на момент написания команды
+    repository.addUser(ctx.author.id, ctx.author.nick)
     while True:
         try:
             guessed_answer = await bot.wait_for('message', timeout = timeout) # Инпут ответа
@@ -106,19 +69,20 @@ async def угадалка(ctx, difficulty=None):
             iterations = 0 # Обнуление задач
             break
         new_timestamp = datetime.now().timestamp() # Текущая временная метка
-        timeout = timestamp + 14 - new_timestamp # Если человек напишет неверное сообщение до обнуления таймера
+        timeout = timestamp + 15 - new_timestamp # Если человек напишет неверное сообщение до обнуления таймера
         if guessed_answer.content.lower() == name: # Если человек угадал
+            repository.addGuessedLevel(guessed_answer.author.id, name)
+            repository.addUser(guessed_answer.author.id, guessed_answer.author.nick)
             author = guessed_answer.author.mention # Упрощение упоминания пользователя
             await guessed_answer.add_reaction('✅') # Реакция на правильный ответ
             await ctx.send(f"{author} угадал(а) уровень.") # Отправка сообщения о победе
             repository.updateUserStatistics(guessed_answer.author.id)
             iterations = 0 # Обнуление задач
-            repository.addGuessedLevel(guessed_answer.author.id, name)
             break # Завершение цикла
 
 # Статистика игрока
 @bot.command(aliases=["stats", "статистика"])
-async def стата(ctx, member: discord.Member = None):
+async def стата(ctx, *, member: discord.Member = None):
     if member is None:
         embed = discord.Embed(
             title = "Ваша статистика:",
