@@ -1,17 +1,56 @@
-easy = {
-    "1": "9blue",
-    "2": "ffffff",
-    "3": "ok"
-}
-medium = {
-    "1": "bloodbath",
-    "2": "auto play area",
-    "3": "outerspace"
-}
-hard = {
-    "1": "the nightmare",
-    "2": "heaven",
-    "3": "ovenbreak"
-}
+import random as r
 
-names = int(list(easy)[-1]) + int(list(medium)[-1]) + int(list(hard)[-1])
+levels = [
+    [
+        {
+            "name": "9blue",
+            "difficulty": "easy",
+            "image": "https://github.com/StylishPS/guesser_thumbnails/blob/main/easy/9blue.png?raw=true"
+        },
+        {
+            "name": "ffffff",
+            "difficulty": "easy",
+            "image": "https://github.com/StylishPS/guesser_thumbnails/blob/main/easy/ffffff.png?raw=true"
+        },
+        {
+            "name": "ok",
+            "difficulty": "easy",
+            "image": "https://github.com/StylishPS/guesser_thumbnails/blob/main/easy/ok.png?raw=true"
+        }
+    ],
+        [{
+            "name": "bloodbath",
+            "difficulty": "medium",
+            "image": "https://github.com/StylishPS/guesser_thumbnails/blob/main/easy/bloodbath.png?raw=true"
+        },
+        {
+            "name": "auto play area",
+            "difficulty": "medium",
+            "image": "https://github.com/StylishPS/guesser_thumbnails/blob/main/easy/autoplayarea.png?raw=true"
+        },
+        {
+            "name": "outerspace",
+            "difficulty": "medium",
+            "image": "https://github.com/StylishPS/guesser_thumbnails/blob/main/easy/outerspace.png?raw=true"
+        }
+    ],
+    [
+        {
+            "name": "the nightmare",
+            "difficulty": "hard",
+            "image": "https://github.com/StylishPS/guesser_thumbnails/blob/main/easy/thenightmare.png?raw=true"
+        },
+        {
+            "name": "heaven",
+            "difficulty": "hard",
+            "image": "https://github.com/StylishPS/guesser_thumbnails/blob/main/easy/heaven.png?raw=true"
+        },
+        {
+            "name": "ovenbreak",
+            "difficulty": "hard",
+            "image": "https://github.com/StylishPS/guesser_thumbnails/blob/main/easy/ovenbreak.png?raw=true"
+        }
+    ]
+]
+names = len(levels)
+print(len(levels[0]))

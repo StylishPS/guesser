@@ -17,12 +17,13 @@ class Repository:
         )""")
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS levels (
             levels_id INT AUTO_INCREMENT PRIMARY KEY,
-            level_name TEXT 
+            level_name TEXT,
+            level_difficulty TEXT
         )""")
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS users_levels (
             users_levels_id INT AUTO_INCREMENT PRIMARY KEY,
             users_id INT NOT NULL,
-            levels_id INT,
+            levels_id INT NOT NULL,
             FOREIGN KEY (users_id) REFERENCES users (users_id),
             FOREIGN KEY (levels_id) REFERENCES levels (levels_id)
         )""")
@@ -32,15 +33,15 @@ class Repository:
         self.cursor.execute("UPDATE users SET points = points + 1 WHERE discord_id = {}".format(discordId)) # Прибавление очков
         self.connection.commit() # Подтверждение изменений
 
-    def addGuessedLevel(self, discordId, name):
-        if self.cursor.execute("SELECT level_name FROM users_levels WHERE"):
-            self.cursor.execute("UPDATE users SET guessed_total = guessed_total + 1 WHERE discord_id = {}".format(discordId)) # Обновление угаданных уровней
+    def addGuessedLevel(self, userId, levelId, name):
+        if self.cursor.execute(f"SELECT level_name FROM users_levels WHERE users_id = {userId} AND levels_id = {levelId}".fetchone()) is None:
+            self.cursor.execute("UPDATE users SET guessed_total = guessed_total + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
             if name in n.easy.values():
-                self.cursor.execute("UPDATE users SET guessed_easy = guessed_easy + 1 WHERE discord_id = {}".format(discordId)) # Обновление угаданных уровней
+                self.cursor.execute("UPDATE users SET guessed_easy = guessed_easy + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
             elif name in n.medium.values():
-                self.cursor.execute("UPDATE users SET guessed_medium = guessed_medium + 1 WHERE discord_id = {}".format(discordId)) # Обновление угаданных уровней
+                self.cursor.execute("UPDATE users SET guessed_medium = guessed_medium + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
             elif name in n.hard.values():
-                self.cursor.execute("UPDATE users SET guessed_hard = guessed_hard + 1 WHERE discord_id = {}".format(discordId)) # Обновление угаданных уровней
+                self.cursor.execute("UPDATE users SET guessed_hard = guessed_hard + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
             self.connection.commit() # Подтверждение изменений
 
     def getUserStatistics(self, discordId):
@@ -60,6 +61,19 @@ class Repository:
                 "guessed_medium": record[3], 
                 "guessed_hard": record[4]}
     
+    def getUserByDiscordId(self, discordId):
+        self.cursor.execute(f"SELECT name FROM users WHERE discord_id = {discordId}")
+
+    def getLevelByName(self, levelName):
+        self.cursor.execute(f"SELECT levels_id FROM levels WHERE level_name = '{levelName}'")
+
     def addUser(self, discordId, name):
+        # userExists = self.cursor.execute("SELECT * FROM users WHERE discord_id = {}".format(discordId))
+        # if len(userExists) is None:
         self.cursor.execute(f"INSERT INTO users VALUES (NULL, '{name}', {discordId}, 0, 0, 0, 0, 0)")
         self.connection.commit()
+
+    def insertLevels(self, level, difficulty):
+        sql = f"INSERT INTO levels VALUES (NULL, '{level}', '{difficulty}')"
+        print(sql)
+        self.cursor.execute(sql)
