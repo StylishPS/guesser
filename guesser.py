@@ -26,8 +26,9 @@ iterations = 0
 
 @bot.event
 async def on_ready():
-    for level in n.levels:
-        repository.insertLevels(n.levels['name'])
+    for difficulty in n.levels:
+        for level in difficulty:
+            repository.insertLevels(level['name'], level['difficulty'])
 
 # Команда угадывания
 @bot.command(aliases=["guess", "угамага", "угагага", "угадать"])

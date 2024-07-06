@@ -1,3 +1,5 @@
+import random as r
+
 levels = [
     [
         {
@@ -51,5 +53,4 @@ levels = [
     ]
 ]
 names = len(levels)
-for i in range(levels):
-    print(levels[i])
+randint = r.randint(1, len(levels[0]))

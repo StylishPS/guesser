@@ -32,11 +32,11 @@ class Repository:
     def updateUserStatistics(self, discordId):
         self.cursor.execute("UPDATE users SET points = points + 1 WHERE discord_id = {}".format(discordId)) # Прибавление очков
         self.connection.commit() # Подтверждение изменений
-
+ 
     def addGuessedLevel(self, userId, levelId, name):
-        if self.cursor.execute(f"SELECT level_name FROM users_levels WHERE users_id = {userId} AND levels_id = {levelId}".fetchone()) is None:
+        if self.cursor.execute("SELECT level_name FROM users_levels WHERE users_id = {} AND levels_id = {}".format(userId, levelId).fetchone()) is None:
             self.cursor.execute("UPDATE users SET guessed_total = guessed_total + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
-            if name in n.easy.values():
+            if self.cursor.execute():
                 self.cursor.execute("UPDATE users SET guessed_easy = guessed_easy + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
             elif name in n.medium.values():
                 self.cursor.execute("UPDATE users SET guessed_medium = guessed_medium + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
@@ -75,5 +75,5 @@ class Repository:
 
     def insertLevels(self, level, difficulty):
         sql = f"INSERT INTO levels VALUES (NULL, '{level}', '{difficulty}')"
-        print(sql)
         self.cursor.execute(sql)
+        self.connection.commit()
