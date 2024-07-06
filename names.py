@@ -1,5 +1,3 @@
-import random as r
-
 levels = [
     [
         {
@@ -53,4 +51,5 @@ levels = [
     ]
 ]
 names = len(levels)
-print(len(levels[0]))
+for i in range(levels):
+    print(levels[i])

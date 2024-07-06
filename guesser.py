@@ -26,8 +26,8 @@ iterations = 0
 
 @bot.event
 async def on_ready():
-
-    repository.insertLevels(level)
+    for level in n.levels:
+        repository.insertLevels(n.levels['name'])
 
 # Команда угадывания
 @bot.command(aliases=["guess", "угамага", "угагага", "угадать"])
@@ -124,7 +124,7 @@ async def хелп(ctx):
 # Эмбеды
 def easy():
     global embed, name
-    randint = r.randint(1, len(n.levels[2]))
+    randint = r.randint(1, len(n.levels[0]))
     embed = discord.Embed(
         title = "Угадалка",
         description = "**Сложность**: Лёгкая",
@@ -134,7 +134,7 @@ def easy():
     embed.set_image(url=f"{((n.levels[0])[randint])['image']}") 
 def medium():
     global embed, name
-    randint = r.randint(1, len(n.levels[2]))
+    randint = r.randint(1, len(n.levels[1]))
     embed = discord.Embed(
         title = "Угадалка",
         description = "**Сложность**: Средняя",
