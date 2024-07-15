@@ -36,12 +36,14 @@ class Repository:
     def addGuessedLevel(self, userId, levelId, name):
         if self.cursor.execute("SELECT level_name FROM users_levels WHERE users_id = {} AND levels_id = {}".format(userId, levelId).fetchone()) is None:
             self.cursor.execute("UPDATE users SET guessed_total = guessed_total + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
-            if self.cursor.execute():
-                self.cursor.execute("UPDATE users SET guessed_easy = guessed_easy + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
-            elif name in n.medium.values():
-                self.cursor.execute("UPDATE users SET guessed_medium = guessed_medium + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
-            elif name in n.hard.values():
-                self.cursor.execute("UPDATE users SET guessed_hard = guessed_hard + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
+            for difficulty in n.levels:
+                for level in difficulty:
+                    if name['difficulty'] == 'easy':
+                        self.cursor.execute("UPDATE users SET guessed_easy = guessed_easy + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
+                    elif level[difficulty] == 'medium':
+                        self.cursor.execute("UPDATE users SET guessed_medium = guessed_medium + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
+                    elif level[difficulty] == 'hard':
+                        self.cursor.execute("UPDATE users SET guessed_hard = guessed_hard + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
             self.connection.commit() # Подтверждение изменений
 
     def getUserStatistics(self, discordId):
