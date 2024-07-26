@@ -17,8 +17,7 @@ class Repository:
         )""")
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS levels (
             levels_id INT AUTO_INCREMENT PRIMARY KEY,
-            level_name TEXT,
-            level_difficulty TEXT
+            level_name TEXT
         )""")
         self.cursor.execute("""CREATE TABLE IF NOT EXISTS users_levels (
             users_levels_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -33,16 +32,17 @@ class Repository:
         self.cursor.execute("UPDATE users SET points = points + 1 WHERE discord_id = {}".format(discordId)) # Прибавление очков
         self.connection.commit() # Подтверждение изменений
  
-    def addGuessedLevel(self, userId, levelId, name):
+    def addGuessedLevel(self, userId, levelId):
+        sql = "SELECT level_name FROM users_levels WHERE users_id = {} AND levels_id = {}".format(userId, levelId)
         if self.cursor.execute("SELECT level_name FROM users_levels WHERE users_id = {} AND levels_id = {}".format(userId, levelId).fetchone()) is None:
             self.cursor.execute("UPDATE users SET guessed_total = guessed_total + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
             for difficulty in n.levels:
                 for level in difficulty:
-                    if name['difficulty'] == 'easy':
+                    if level in n.levels[0]:
                         self.cursor.execute("UPDATE users SET guessed_easy = guessed_easy + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
-                    elif level[difficulty] == 'medium':
+                    elif level in n.levels[1]:
                         self.cursor.execute("UPDATE users SET guessed_medium = guessed_medium + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
-                    elif level[difficulty] == 'hard':
+                    elif level in n.levels[2]:
                         self.cursor.execute("UPDATE users SET guessed_hard = guessed_hard + 1 WHERE users_id = {}".format(userId)) # Обновление угаданных уровней
             self.connection.commit() # Подтверждение изменений
 
@@ -75,7 +75,7 @@ class Repository:
         self.cursor.execute(f"INSERT INTO users VALUES (NULL, '{name}', {discordId}, 0, 0, 0, 0, 0)")
         self.connection.commit()
 
-    def insertLevels(self, level, difficulty):
-        sql = f"INSERT INTO levels VALUES (NULL, '{level}', '{difficulty}')"
+    def insertLevels(self, level):
+        sql = f"INSERT INTO levels VALUES (NULL, '{level}')"
         self.cursor.execute(sql)
         self.connection.commit()

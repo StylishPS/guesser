@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 import names as n
 import random as r
 import asyncio as asc
@@ -28,15 +29,27 @@ iterations = 0
 async def on_ready():
     for difficulty in n.levels:
         for level in difficulty:
-            repository.insertLevels(level['name'], level['difficulty'])
+            repository.insertLevels(level['name'])
+
+@bot.event
+async def on_message(ctx):
+    await bot.process_commands(ctx)
+
+@bot.hybrid_command(name = 'reload', description="Reload thy commands")
+@commands.is_owner()
+async def reload(ctx):
+    await ctx.send("Reloading commands...", ephemeral = True)
+    await bot.tree.sync()
+    await ctx.send("Reloaded the commands successfully", ephemeral = True)
 
 # Команда угадывания
-@bot.command(aliases=["guess", "угамага", "угагага", "угадать"])
-async def угадалка(ctx, difficulty=None):
+@bot.hybrid_command(name = "guess", description = "Start the guessing game.")
+@app_commands.describe(difficulty = "Difficulty of level.")
+async def угадалка(ctx, difficulty = None):
     global randint, guessed_answer, iterations
     iterations += 1
     if iterations > 1:
-        await ctx.reply("В канале уже идет игра!")
+        await ctx.reply("There is already a going game on this channel!")
         return # Окончание функции команды
     else:
         pass
@@ -80,7 +93,7 @@ async def угадалка(ctx, difficulty=None):
             repository.addUser(guessed_answer.author.id, guessed_answer.author.nick)
             author = guessed_answer.author.mention # Упрощение упоминания пользователя
             await guessed_answer.add_reaction('✅') # Реакция на правильный ответ
-            await ctx.send(f"{author} угадал(а) уровень.") # Отправка сообщения о победе
+            await ctx.send(f"{author} have guessed the level.") # Отправка сообщения о победе
             repository.updateUserStatistics(guessed_answer.author.id)
             iterations = 0 # Обнуление задач
             break # Завершение цикла
@@ -90,19 +103,23 @@ def addGuessedLevel(discordId, levelName):
     levelId = repository.getLevelByName(levelName)
     repository.addGuessedLevel(userId, levelId)
 
+@bot.hybrid_command(name = "ping", description = "Check the bot's latency responding the commands.")
+async def ping(ctx):
+    await ctx.reply(f"Pong 🏓! The bot's latency is {bot.latency * 1000:.0f}ms.")
+    
 # Статистика игрока
 @bot.command(aliases=["stats", "статистика"])
 async def стата(ctx, *, member: discord.Member = None):
     if member is None:
         embed = discord.Embed(
-            title = "Ваша статистика:",
+            title = "Your stats:",
             description = descriptionString(ctx.author.id),
             colour = discord.Colour.from_rgb(158, 160, 255)
         )
         await ctx.reply(embed = embed, mention_author = False)
     else:
         embed = discord.Embed(
-            title = f"Статистика игрока {member.nick}:",
+            title = f"Stats of {member.display_name}:",
             description = descriptionString(member.id),
             colour = discord.Colour.from_rgb(158, 160, 255)
         )
@@ -112,10 +129,9 @@ def descriptionString(discordId):
     userStatistics = repository.getUserStatistics(discordId)
     return  f"☕ **Очки:** {userStatistics["points"]}\n\n " \
         f"🎀 **Угаданные уровни**: {userStatistics["guessed_total"]} / {n.names}\n " \
-        f"🟢 **Угаданные легкие уровни**: {userStatistics["guessed_easy"]} / {list(n.easy)[-1]}\n " \
-        f"🟡 **Угаданные средние уровни**: {userStatistics["guessed_medium"]} / {list(n.medium)[-1]}\n " \
-        f"🔴 **Угаданные сложные уровни**: {userStatistics["guessed_hard"]} / {list(n.hard)[-1]}"
-
+        f"🟢 **Угаданные легкие уровни**: {userStatistics["guessed_easy"]} / {len(n.levels[0])}\n " \
+        f"🟡 **Угаданные средние уровни**: {userStatistics["guessed_medium"]} / {len(n.levels[1])}\n " \
+        f"🔴 **Угаданные сложные уровни**: {userStatistics["guessed_hard"]} / {len(n.levels[2])}"
 
 # Инфо по боту
 @bot.command()
@@ -125,32 +141,35 @@ async def хелп(ctx):
 # Эмбеды
 def easy():
     global embed, name
-    randint = r.randint(1, len(n.levels[0]))
+    randint = r.randint(0, len(n.levels[0]) - 1)
     embed = discord.Embed(
         title = "Угадалка",
         description = "**Сложность**: Лёгкая",
         colour = discord.Colour.from_rgb(110, 227, 75)
     )
     name = ((n.levels[0])[randint])['name']
-    embed.set_image(url=f"{((n.levels[0])[randint])['image']}") 
+    image = ((n.levels[0])[randint])['image']
+    embed.set_image(url=f"{image}") 
 def medium():
     global embed, name
-    randint = r.randint(1, len(n.levels[1]))
+    randint = r.randint(0, len(n.levels[1]) - 1)
     embed = discord.Embed(
         title = "Угадалка",
         description = "**Сложность**: Средняя",
         colour = discord.Colour.from_rgb(243, 214, 52)
     )
     name = ((n.levels[1])[randint])['name']
-    embed.set_image(url=f"{((n.levels[1])[randint])['image']}")  
+    image = ((n.levels[1])[randint])['image']
+    embed.set_image(url=f"{image}")  
 def hard():
     global embed, name
-    randint = r.randint(1, len(n.levels[2]))
+    randint = r.randint(0, len(n.levels[2]) - 1)
     embed = discord.Embed(
         title = "Угадалка",
         description = "**Сложность**: Хард",
         colour = discord.Colour.from_rgb(235, 64, 52)
     )
     name = ((n.levels[2])[randint])['name']
-    embed.set_image(url=f"{((n.levels[2])[randint])['image']}") 
+    image = ((n.levels[2])[randint])['image']
+    embed.set_image(url=f"{image}") 
 bot.run(TOKEN)
