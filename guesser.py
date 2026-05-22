@@ -9,7 +9,7 @@ import sqlite3 as sql
 import repository
 
 # Токен, префикс, разрешения
-TOKEN = 'MTE5NTYxMzA2OTEyOTI5Nzk5MA.G0fec1.t7IGTikGHXzSYeeGo5WpHz01AqGLzsC3VwaUnI'
+TOKEN = ''
 PREFIX = '%'
 intents = discord.Intents().all()
 bot = commands.Bot(
